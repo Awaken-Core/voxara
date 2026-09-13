@@ -1,14 +1,10 @@
-import { SignUp } from "@clerk/nextjs";
-
+import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function SignUpPage() {
     return (
         <AuthShell headline="Your next great voice starts here.">
-            <SignUp
-                signInUrl="/sign-in"
-                forceRedirectUrl="/"
-            />
+            <AuthForm mode="sign-up" />
         </AuthShell>
     );
 }

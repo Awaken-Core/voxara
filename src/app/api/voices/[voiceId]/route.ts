@@ -1,16 +1,16 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
 import { UTApi } from "uploadthing/server";
 
 const utapi = new UTApi();
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ voiceId: string }> },
 ) {
-    const { userId, orgId } = await auth();
+    const session = await getServerSession(request);
 
-    if (!userId || !orgId) {
+    if (!session) {
         return new Response("Unauthorized", { status: 401 });
     }
 
@@ -20,7 +20,7 @@ export async function GET(
         where: { id: voiceId },
         select: {
             variant: true,
-            orgId: true,
+            userId: true,
             r2ObjectKey: true,
         },
     });
@@ -29,7 +29,7 @@ export async function GET(
         return new Response("Not found", { status: 404 });
     }
 
-    if (voice.variant === "CUSTOM" && voice.orgId !== orgId) {
+    if (voice.variant === "CUSTOM" && voice.userId !== session.user.id) {
         return new Response("Not found", { status: 404 });
     }
 

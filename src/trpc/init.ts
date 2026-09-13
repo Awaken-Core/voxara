@@ -1,18 +1,18 @@
-import { auth } from '@clerk/nextjs/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { cache } from 'react';
 import superjson from "superjson";
+import { getServerSession } from '@/lib/auth-session';
 export const createTRPCContext = cache(async () => {
   /**
    * @see: https://trpc.io/docs/server/context
    */
-  return {};
+  return { session: await getServerSession() };
 });
 // Avoid exporting the entire t-object
 // since it's not very descriptive.
 // For instance, the use of a t variable
 // is common in i18n libraries.
-const t = initTRPC.create({
+const t = initTRPC.context<Awaited<ReturnType<typeof createTRPCContext>>>().create({
   /**
    * @see https://trpc.io/docs/server/data-transformers
    */
@@ -24,32 +24,12 @@ export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
 
 // Authenticated procedure - calls auth() only when needed
-export const authProcedure = t.procedure.use(async ({ next }) => {
-  const { userId } = await auth();
-
-  if (!userId) {
+export const authProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.session?.user.id) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
   return next({
-    ctx: { userId },
+    ctx: { userId: ctx.session.user.id },
   });
-});
-
-// Organization procedure - requires userId and orgId
-export const orgProcedure = t.procedure.use(async ({ next }) => {
-  const { userId, orgId } = await auth();
-
-  if (!userId) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-
-  if (!orgId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Organization required",
-    });
-  }
-
-  return next({ ctx: { userId, orgId } });
 });

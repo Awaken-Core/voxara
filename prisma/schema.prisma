@@ -31,61 +31,87 @@ enum UserRole {
   ADMIN
 }
 
-enum OrganizationRole {
-  MEMBER
-  ADMIN
-}
-
-model Organization {
-  id String @id @default(cuid()) // for now we will be using clerkId as the id for the organization, but we may change this in the future
-
-  name String
-
-  voices            Voice[]
-  generations       Generation[]
-  organizationUsers OrganizationUser[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model OrganizationUser {
-  id String @id @default(cuid())
-
-  orgId  String
-  userId String
-
-  role OrganizationRole @default(MEMBER)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([orgId, userId])
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
 
 model User {
-  id String @id @default(cuid()) // for now we will be using clerkId as the id for the user, but we may change this in the future
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
 
-  role UserRole @default(USER)
-
-  email    String  @unique
+  role     UserRole @default(USER)
   password String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organizationUsers OrganizationUser[]
   generations       Generation[]
   voices            Voice[]
+  subscriptions     UserSubscription[]
+  payments          Payment[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
 
 model Voice {
   id String @id @default(cuid())
 
-  orgId       String?
   userId      String?
   name        String
   description String?
@@ -98,18 +124,15 @@ model Voice {
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  organization Organization? @relation(fields: [orgId], references: [id])
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([variant])
-  @@index([orgId])
 }
 
 model Generation {
   id String @id @default(cuid())
 
-  orgId       String
   generatedBy String?
 
   voiceId String?
@@ -125,10 +148,80 @@ model Generation {
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  organization Organization? @relation(fields: [orgId], references: [id])
 
   generatedByUser User? @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
 
-  @@index([orgId])
   @@index([voiceId])
+}
+
+// Payments
+model Subscription {
+  id            String   @id
+  price         Decimal  @db.Decimal(10, 2)
+  totalDuration Int      @default(30)
+  benefits      String[]
+  nonBenefits   String[]
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  userSubscriptions UserSubscription[]
+  transactions      PaymentTransaction[]
+}
+
+model UserSubscription {
+  id             String    @id
+  isActive       Boolean   @default(true)
+  subscriptionId String
+  userId         String
+  startDate      DateTime? @db.Timestamptz
+  endDate        DateTime? @db.Timestamptz
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([userId])
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  userId        String
+  dodoPaymentId String?       @unique
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("USD")
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now()) @db.Timestamptz
+  updatedAt     DateTime      @updatedAt @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  transaction PaymentTransaction?
+
+  @@index([userId])
+}
+
+model PaymentTransaction {
+  id             String @id @default(uuid()) @db.Uuid
+  paymentId      String @unique @db.Uuid
+  subscriptionId String
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: NoAction)
+
+  @@index([subscriptionId])
+}
+
+model DodoWebhookEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventId   String   @unique
+  eventType String
+  payload   Json
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
 }

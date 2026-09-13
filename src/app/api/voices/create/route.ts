@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerSession } from "@/lib/auth-session";
 import { parseBuffer } from "music-metadata";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -18,9 +18,9 @@ const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 const MIN_AUDIO_DURATION_SECONDS = 10;
 
 export async function POST(request: Request) {
-    const { userId, orgId } = await auth();
+    const session = await getServerSession(request);
 
-    if (!userId || !orgId) {
+    if (!session) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -105,8 +105,7 @@ export async function POST(request: Request) {
             data: {
                 name,
                 variant: "CUSTOM",
-                orgId,
-                userId,
+                userId: session.user.id,
                 description,
                 category,
                 language,

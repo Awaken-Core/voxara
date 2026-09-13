@@ -18,19 +18,25 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-    OrganizationSwitcher,
-    UserButton,
-    useClerk
-} from "@clerk/nextjs";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { signOut, useSession } from "@/lib/auth-client";
 import {
     type LucideIcon,
     Home,
     LayoutGrid,
     AudioLines,
-    Settings,
     Headphones,
     ChartColumn,
+    ChevronsUpDown,
+    LogOut,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -94,7 +100,7 @@ function NavSection({ label, items, pathname }: NavSectionProps) {
 
 export function DashboardSidebar() {
     const pathname = usePathname();
-    const clerk = useClerk();
+    const { data: session, isPending } = useSession();
 
     const mainMenuItems: MenuItem[] = [
         {
@@ -121,11 +127,6 @@ export function DashboardSidebar() {
 
     const othersMenuItems: MenuItem[] = [
         {
-            title: "Settings",
-            icon: Settings,
-            onClick: () => clerk.openOrganizationProfile(),
-        },
-        {
             title: "Help and support",
             url: "mailto:mehulprajapati7456e@gmail.com",
             icon: Headphones,
@@ -149,33 +150,6 @@ export function DashboardSidebar() {
                     </span>
                     <SidebarTrigger className="ml-auto lg:hidden" />
                 </div>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <OrganizationSwitcher
-                            hidePersonal
-                            fallback={
-                                <Skeleton
-                                    className="h-8.5 w-full group-data-[collapsible=icon]:size-8 rounded-md border bg-background"
-                                />
-                            }
-                            appearance={{
-                                elements: {
-                                    rootBox:
-                                        "w-full! group-data-[collapsible=icon]:w-auto! group-data-[collapsible=icon]:flex! group-data-[collapsible=icon]:justify-center!",
-                                    organizationSwitcherTrigger:
-                                        "w-full! justify-between! bg-background! border! border-border! rounded-md! pl-1! pr-2! py-1! gap-3! group-data-[collapsible=icon]:w-auto! group-data-[collapsible=icon]:p-1! shadow-sm!",
-                                    organizationPreview: "gap-2!",
-                                    organizationPreviewAvatarBox: "size-6! rounded-sm!",
-                                    organizationPreviewTextContainer:
-                                        "text-xs! tracking-tight! font-medium! text-foreground! group-data-[collapsible=icon]:hidden!",
-                                    organizationPreviewMainIdentifier: "text-[13px]!",
-                                    organizationSwitcherTriggerIcon:
-                                        "size-4! text-sidebar-foreground! group-data-[collapsible=icon]:hidden!",
-                                },
-                            }}
-                        />
-                    </SidebarMenuItem>
-                </SidebarMenu>
             </SidebarHeader>
             <div className="border-b border-dashed border-border" />
             <SidebarContent>
@@ -190,23 +164,33 @@ export function DashboardSidebar() {
             <SidebarFooter className="gap-3 py-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <UserButton
-                            showName
-                            fallback={
-                                <Skeleton className="h-8.5 w-full group-data-[collapsible=icon]:size-8 rounded-md border border-border bg-background" />
-                            }
-                            appearance={{
-                                elements: {
-                                    rootBox:
-                                        "w-full! group-data-[collapsible=icon]:w-auto! group-data-[collapsible=icon]:flex! group-data-[collapsible=icon]:justify-center!",
-                                    userButtonTrigger:
-                                        "w-full! justify-between! bg-background! border! border-border! rounded-md! pl-1! pr-2! py-1! shadow-sm! group-data-[collapsible=icon]:w-auto! group-data-[collapsible=icon]:p-1! group-data-[collapsible=icon]:after:hidden!",
-                                    userButtonBox: "flex-row-reverse! gap-2!",
-                                    userButtonOuterIdentifier: "text-[13px]! tracking-tight! font-medium! text-foreground! pl-0! group-data-[collapsible=icon]:hidden!",
-                                    userButtonAvatarBox: "size-6!",
-                                }
-                            }}
-                        />
+                        {isPending ? (
+                            <Skeleton className="h-9 w-full group-data-[collapsible=icon]:size-9" />
+                        ) : (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
+                                        <Avatar size="sm">
+                                            <AvatarImage src={session?.user.image ?? undefined} alt={session?.user.name ?? "User"} />
+                                            <AvatarFallback>{session?.user.name?.slice(0, 1).toUpperCase() ?? "U"}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                                            <span className="truncate font-medium">{session?.user.name}</span>
+                                            <span className="truncate text-xs text-muted-foreground">{session?.user.email}</span>
+                                        </div>
+                                        <ChevronsUpDown className="ml-auto group-data-[collapsible=icon]:hidden" />
+                                    </SidebarMenuButton>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="top" align="end" className="w-(--radix-dropdown-menu-trigger-width)">
+                                    <DropdownMenuLabel>{session?.user.name}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={() => void signOut({ fetchOptions: { onSuccess: () => window.location.assign("/sign-in") } })}>
+                                        <LogOut />
+                                        Sign out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>

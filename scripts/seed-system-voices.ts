@@ -210,7 +210,6 @@ async function seedSystemVoice(name: string) {
     data: {
       name,
       variant: "SYSTEM",
-      orgId: null,
       r2ObjectKey: uploadedFile.key,
       ...(meta && {
         description: meta.description,

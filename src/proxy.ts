@@ -1,46 +1,25 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+import { NextResponse, type NextRequest } from "next/server";
 
-const isPublicRoute = createRouteMatcher([
-    "/sign-in(.*)",
-    "/sign-up(.*)",
-    "/api/webhooks/clerk",
-]);
+const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth"];
 
-const isOrgSelectionRoute = createRouteMatcher(["/org-selection(.*)"]);
+export function proxy(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+    const isPublic = pathname === "/api/uploadthing" || PUBLIC_PREFIXES.some(
+        (path) => pathname === path || pathname.startsWith(`${path}/`),
+    );
+    const hasSession = Boolean(getSessionCookie(request));
 
-export default clerkMiddleware(async (auth, req) => {
-    const { userId, orgId } = await auth();
-
-    // Allow public routes
-    if (isPublicRoute(req)) {
-        return NextResponse.next();
-    }
-
-    // Protect non-public routes
-    if (!userId) {
-        await auth.protect();
-    }
-
-    // Allow org selection page
-    if (isOrgSelectionRoute(req)) {
-        return NextResponse.next();
-    }
-
-    // For all protected routes, ensure org is selected
-    if (userId && !orgId) {
-        const orgSelection = new URL("/org-selection", req.url);
-        return NextResponse.redirect(orgSelection);
+    if (!hasSession && !isPublic) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
     }
 
     return NextResponse.next();
-});
+}
 
 export const config = {
     matcher: [
-        // Skip Next.js internals and all static files, unless found in search params
-        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-        // Always run for API routes
-        '/(api|trpc)(.*)',
+        "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+        "/(api|trpc)(.*)",
     ],
 };

@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@/lib/db";
-import { createTRPCRouter, orgProcedure } from "../init";
+import { authProcedure, createTRPCRouter } from "../init";
 import { deleteAudioFile } from "@/utils/uploadThings-server-functions";
 
 export const voicesRouter = createTRPCRouter({
-    getAll: orgProcedure
+    getAll: authProcedure
         .input(
             z
                 .object({
@@ -36,7 +36,7 @@ export const voicesRouter = createTRPCRouter({
                 prisma.voice.findMany({
                     where: {
                         variant: "CUSTOM",
-                        orgId: ctx.orgId,
+                        userId: ctx.userId,
                         ...searchFilter,
                     },
                     orderBy: { createdAt: "desc" },
@@ -69,14 +69,14 @@ export const voicesRouter = createTRPCRouter({
             return { custom, system };
         }),
 
-    delete: orgProcedure
+    delete: authProcedure
         .input(z.object({ id: z.string() }))
         .mutation(async ({ ctx, input }) => {
             const voice = await prisma.voice.findUnique({
                 where: {
                     id: input.id,
                     variant: "CUSTOM",
-                    orgId: ctx.orgId,
+                    userId: ctx.userId,
                 },
                 select: { id: true, r2ObjectKey: true },
             });

@@ -3,20 +3,19 @@ import { TRPCError } from "@trpc/server";
 import { chatterbox } from "@/lib/chatterbox-client";
 import { prisma } from "@/lib/db";
 import { TEXT_MAX_LENGTH } from "@/features/text-to-speech/data/constants";
-import { createTRPCRouter, orgProcedure } from "../init";
+import { authProcedure, createTRPCRouter } from "../init";
 import { uploadAudiofile } from "@/utils/uploadThings-server-functions";
 
 export const generationsRouter = createTRPCRouter({
-    getById: orgProcedure
+    getById: authProcedure
         .input(z.object({ id: z.string() }))
         .query(async ({ input, ctx }) => {
             const generation = await prisma.generation.findUnique({
                 where: {
                     id: input.id,
-                    orgId: ctx.orgId,
+                    generatedBy: ctx.userId,
                 },
                 omit: {
-                    orgId: true,
                     r2ObjectKey: true,
                 },
             });
@@ -31,14 +30,13 @@ export const generationsRouter = createTRPCRouter({
             };
         }),
 
-    getAll: orgProcedure.query(async ({ ctx }) => {
+    getAll: authProcedure.query(async ({ ctx }) => {
         const generations = await prisma.generation.findMany({
             where: {
-                orgId: ctx.orgId,
+                generatedBy: ctx.userId,
             },
             orderBy: { createdAt: "desc" },
             omit: {
-                orgId: true,
                 r2ObjectKey: true,
             },
         });
@@ -46,7 +44,7 @@ export const generationsRouter = createTRPCRouter({
         return generations;
     }),
 
-    create: orgProcedure
+    create: authProcedure
         .input(
             z.object({
                 text: z.string().min(1).max(TEXT_MAX_LENGTH),
@@ -65,7 +63,7 @@ export const generationsRouter = createTRPCRouter({
                         { variant: "SYSTEM" },
                         {
                             variant: "CUSTOM",
-                            orgId: ctx.orgId,
+                            userId: ctx.userId,
                         }
                     ],
                 },
@@ -124,7 +122,6 @@ export const generationsRouter = createTRPCRouter({
             try {
                 const generation = await prisma.generation.create({
                     data: {
-                        orgId: ctx.orgId,
                         generatedBy: ctx.userId,
                         text: input.text,
                         voiceName: voice.name,

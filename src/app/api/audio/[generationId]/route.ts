@@ -1,16 +1,16 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
 import { UTApi } from "uploadthing/server";
 
 const utapi = new UTApi();
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ generationId: string }> },
 ) {
-    const { userId, orgId } = await auth();
+    const session = await getServerSession(request);
 
-    if (!userId || !orgId) {
+    if (!session) {
         return new Response("Unauthorized", { status: 401 });
     }
 
@@ -19,7 +19,7 @@ export async function GET(
     const generation = await prisma.generation.findUnique({
         where: {
             id: generationId,
-            orgId,
+            generatedBy: session.user.id,
         },
     });
 

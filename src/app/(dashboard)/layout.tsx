@@ -1,10 +1,12 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 import {
     SidebarInset,
     SidebarProvider
 } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/features/dashboard/components/dashboard-sidebar";
+import { getServerSession } from "@/lib/auth-session";
 
 export default async function DashboardLayout({
     children,
@@ -12,6 +14,11 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }) {
     const cookieStore = await cookies();
+    const session = await getServerSession();
+
+    if (!session) {
+        redirect("/sign-in");
+    }
     const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
     return (

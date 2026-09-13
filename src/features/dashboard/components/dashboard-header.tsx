@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 import { Headphones, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/theme-toggle";
 
 export function DashboardHeader() {
-    const { isLoaded, user } = useUser();
+    const { data: session, isPending } = useSession();
 
     return (
         <div className="flex items-start justify-between font-sans">
@@ -17,7 +17,7 @@ export function DashboardHeader() {
                     Nice to see you
                 </p>
                 <h1 className="text-2xl lg:text-3xl font-semibold tracking-[-0.8px] text-foreground">
-                    {isLoaded ? (user?.fullName ?? user?.firstName ?? "there") : "..."}
+                    {isPending ? "..." : (session?.user.name ?? "there")}
                 </h1>
             </div>
 

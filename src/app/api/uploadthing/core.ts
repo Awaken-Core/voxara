@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { getServerSession } from "@/lib/auth-session";
 import { randomUUID } from "crypto";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
@@ -16,11 +16,11 @@ export const ourFileRouter = {
         },
     })
         .middleware(async () => {
-            const user = await currentUser();
-            if (!user?.id) {
+            const session = await getServerSession();
+            if (!session?.user.id) {
                 throw new UploadThingError("Unauthorized");
             }
-            return { user };
+            return { userId: session.user.id };
         })
         .onUploadComplete(async ({ file }) => {
             return { fileKey: file.key, fileType: file.type }

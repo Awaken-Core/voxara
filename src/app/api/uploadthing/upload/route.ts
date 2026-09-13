@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { uploadUploadThingFile } from "../core";
+import { getServerSession } from "@/lib/auth-session";
 
 export async function POST(req: Request) {
+    const session = await getServerSession(req);
+    if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { file } = await req.json();
 
     if (!file) {
