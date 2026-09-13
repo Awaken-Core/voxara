@@ -128,7 +128,7 @@ export function VoiceRecorder({
     if (isRecording) {
         return (
             <div className="flex flex-col overflow-hidden rounded-2xl border">
-                <div ref={containerRef} className="w-full" />
+                <div ref={containerRef} className="w-full text-foreground" />
                 <div className="flex items-center justify-between border-t p-4">
                     <p className="text-[28px] font-semibold leading-[1.2] tracking-tight">
                         {formatTime(elapsedTime)}

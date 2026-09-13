@@ -46,9 +46,13 @@ export function useAudioRecorder() {
     useEffect(() => {
         if (!isRecording || !containerRef.current || !streamRef.current) return;
 
+        // WaveSurfer paints to a canvas, so CSS variables are not resolved there.
+        // Reading the computed color keeps the waveform visible in both themes.
+        const waveColor = getComputedStyle(containerRef.current).color;
+
         const ws = WaveSurfer.create({
             container: containerRef.current,
-            waveColor: "hsl(var(--foreground) / 0.5)",
+            waveColor,
             height: 144,
             barWidth: 1,
             barGap: 2,
