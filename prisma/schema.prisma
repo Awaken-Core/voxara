@@ -38,24 +38,48 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum UsingFor {
+  OFFICE
+  STUDENT
+  FREELANCE
+  PERSONAL
+  OTHERS
+}
+
+enum PlanType {
+  FREE
+  PREMIUM
+  PRO
+}
+
 model User {
   id            String    @id
   name          String
   email         String
   emailVerified Boolean   @default(false)
   image         String?
+  isOnboarded   Boolean   @default(false)
+  isPremium     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
 
+  // Onboarding details-------------
+  usingFor             UsingFor? @default(PERSONAL)
+  primaryGoals         String?
+  noteForUs            String?
+  continueWithPlanType PlanType  @default(FREE)
+  // General faq will also be given, during onboard session
+  // -------------------------------
+
   role     UserRole @default(USER)
   password String?
 
-  generations       Generation[]
-  voices            Voice[]
-  subscriptions     UserSubscription[]
-  payments          Payment[]
+  generations   Generation[]
+  voices        Voice[]
+  subscriptions UserSubscription[]
+  payments      Payment[]
 
   @@unique([email])
   @@map("user")
@@ -122,8 +146,8 @@ model Voice {
 
   generations Generation[]
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -146,8 +170,8 @@ model Generation {
   topK              Int
   repetitionPenalty Float
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   generatedByUser User? @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
 
@@ -158,6 +182,7 @@ model Generation {
 model Subscription {
   id            String   @id
   price         Decimal  @db.Decimal(10, 2)
+  planType      PlanType @default(FREE)
   totalDuration Int      @default(30)
   benefits      String[]
   nonBenefits   String[]

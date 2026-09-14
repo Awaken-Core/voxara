@@ -10,6 +10,31 @@ export const auth = betterAuth({
         provider: "postgresql",
     }),
 
+    databaseHooks: {
+        account: {
+            create: {
+                after: async (account) => {
+                    if (account.providerId === "credential" && account.password) {
+                        await prisma.user.update({
+                            where: { id: account.userId },
+                            data: { password: account.password },
+                        });
+                    }
+                },
+            },
+            update: {
+                after: async (account) => {
+                    if (account.providerId === "credential" && account.password) {
+                        await prisma.user.update({
+                            where: { id: account.userId },
+                            data: { password: account.password },
+                        });
+                    }
+                },
+            },
+        },
+    },
+
     emailAndPassword: {
         enabled: true,
     },
