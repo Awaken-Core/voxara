@@ -74,12 +74,14 @@ model User {
   // General faq will also be given, during onboard session
   // -------------------------------
 
-  role     UserRole @default(USER)
+  role UserRole @default(USER)
 
   generations   Generation[]
   voices        Voice[]
   subscriptions UserSubscription[]
   payments      Payment[]
+  userCredits   UserCredits?
+  creditLogs    CreditLog[]
 
   @@unique([email])
   @@map("user")
@@ -149,7 +151,7 @@ model Voice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([variant])
 }
@@ -183,7 +185,8 @@ model Subscription {
   id            String   @id
   dodoProductId String?  @unique
   price         Decimal  @db.Decimal(10, 2)
-  planType      PlanType @default(FREE) @unique
+  planType      PlanType @unique @default(FREE)
+  credits       Int      @default(3) // No. of voices can be generated
   totalDuration Int      @default(30)
   benefits      String[]
   nonBenefits   String[]
@@ -195,19 +198,20 @@ model Subscription {
 }
 
 model UserSubscription {
-  id             String    @id
-  dodoSubscriptionId String? @unique
-  isActive       Boolean   @default(true)
-  subscriptionId String
-  userId         String
-  startDate      DateTime? @db.Timestamptz
-  endDate        DateTime? @db.Timestamptz
-  createdAt      DateTime  @default(now()) @db.Timestamptz
-  updatedAt      DateTime  @updatedAt @db.Timestamptz
+  id                 String    @id
+  dodoSubscriptionId String?   @unique
+  isActive           Boolean   @default(true)
+  subscriptionId     String
+  userId             String
+  startDate          DateTime? @db.Timestamptz
+  endDate            DateTime? @db.Timestamptz
+  createdAt          DateTime  @default(now()) @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @db.Timestamptz
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id])
 
-  user User @relation(fields: [userId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  creditLogs  CreditLog[]
 
   @@index([subscriptionId])
   @@index([userId])
@@ -251,4 +255,32 @@ model DodoWebhookEvent {
   payload   Json
   processed Boolean  @default(false)
   createdAt DateTime @default(now()) @db.Timestamptz
+}
+
+model UserCredits {
+  id                 String @id @default(uuid())
+  userId             String @unique
+  totalCredits       Int    @default(0)
+
+  user             User?             @relation(fields: [userId], references: [id])
+
+  createdAt  DateTime    @default(now()) @db.Timestamptz
+  updatedAt  DateTime    @updatedAt @db.Timestamptz
+  creditLogs CreditLog[]
+}
+
+model CreditLog {
+  id                 String @id @default(uuid())
+  userId             String
+  userSubscriptionId String
+  creditId           String
+
+  creditsAdded       Int   @default(0)
+
+  user             User?             @relation(fields: [userId], references: [id], onDelete: NoAction)
+  userSubscription UserSubscription? @relation(fields: [userSubscriptionId], references: [id], onDelete: NoAction)
+  userCredit       UserCredits?      @relation(fields: [creditId], references: [id], onDelete: NoAction)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
 }
