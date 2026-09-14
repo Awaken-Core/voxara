@@ -15,6 +15,7 @@ const plans: Array<{
   id: string;
   planType: PlanType;
   price: number;
+  credits: number;
   benefits: string[];
   nonBenefits: string[];
 }> = [
@@ -22,6 +23,7 @@ const plans: Array<{
     id: "plan_free",
     planType: "FREE",
     price: 0,
+    credits: 3,
     benefits: ["Core text to speech", "Starter voice library", "Personal workspace"],
     nonBenefits: ["Custom voice cloning", "Priority processing"],
   },
@@ -29,6 +31,7 @@ const plans: Array<{
     id: "plan_premium",
     planType: "PREMIUM",
     price: 19,
+    credits: 30,
     benefits: ["More monthly generations", "Custom voice cloning", "Commercial usage"],
     nonBenefits: ["Priority processing"],
   },
@@ -36,6 +39,7 @@ const plans: Array<{
     id: "plan_pro",
     planType: "PRO",
     price: 49,
+    credits: 80,
     benefits: ["Highest usage limits", "Priority processing", "Priority support"],
     nonBenefits: [],
   },
@@ -51,6 +55,7 @@ async function main() {
         totalDuration: 30,
         benefits: plan.benefits,
         nonBenefits: plan.nonBenefits,
+        credits: plan.credits
       },
     });
   }
