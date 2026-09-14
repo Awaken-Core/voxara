@@ -17,7 +17,10 @@ export const onboardingRouter = createTRPCRouter({
       select: {
         continueWithPlanType: true,
         subscriptions: {
-          where: { isActive: true },
+          where: {
+            isActive: true,
+            OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
+          },
           orderBy: { createdAt: "desc" },
           take: 1,
           select: { subscription: { select: { planType: true } } },

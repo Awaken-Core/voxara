@@ -34,6 +34,7 @@ enum UserRole {
 enum PaymentStatus {
   PENDING
   COMPLETED
+  CANCELLED
   FAILED
   REFUNDED
 }
@@ -180,8 +181,9 @@ model Generation {
 // Payments
 model Subscription {
   id            String   @id
+  dodoProductId String?  @unique
   price         Decimal  @db.Decimal(10, 2)
-  planType      PlanType @default(FREE)
+  planType      PlanType @default(FREE) @unique
   totalDuration Int      @default(30)
   benefits      String[]
   nonBenefits   String[]
@@ -194,6 +196,7 @@ model Subscription {
 
 model UserSubscription {
   id             String    @id
+  dodoSubscriptionId String? @unique
   isActive       Boolean   @default(true)
   subscriptionId String
   userId         String

@@ -35,6 +35,7 @@ import {
     AudioLines,
     Headphones,
     ChartColumn,
+    CreditCard,
     ChevronsUpDown,
     LogOut,
 } from "lucide-react";
@@ -122,6 +123,11 @@ export function DashboardSidebar() {
             title: "Analytics",
             url: "/analytics",
             icon: ChartColumn,
+        },
+        {
+            title: "Pricing",
+            url: "/pricing",
+            icon: CreditCard,
         },
     ];
 

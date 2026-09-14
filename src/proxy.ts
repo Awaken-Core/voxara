@@ -1,7 +1,7 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth"];
+const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth", "/api/webhooks"];
 
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
