@@ -7,6 +7,24 @@ import { authProcedure, createTRPCRouter } from "../init";
 import { uploadAudiofile } from "@/utils/uploadThings-server-functions";
 
 export const generationsRouter = createTRPCRouter({
+    getCredits: authProcedure.query(async ({ ctx }) => {
+        const [credits, user] = await Promise.all([
+            prisma.userCredits.findUnique({
+                where: { userId: ctx.userId },
+                select: { totalCredits: true },
+            }),
+            prisma.user.findUniqueOrThrow({
+                where: { id: ctx.userId },
+                select: { isPremium: true },
+            }),
+        ]);
+
+        return {
+            totalCredits: credits?.totalCredits ?? 0,
+            isPremium: user.isPremium,
+        };
+    }),
+
     getById: authProcedure
         .input(z.object({ id: z.string() }))
         .query(async ({ input, ctx }) => {
@@ -88,88 +106,125 @@ export const generationsRouter = createTRPCRouter({
                 });
             }
 
-            const { data, error } = await chatterbox.POST("/generate", {
-                body: {
-                    prompt: input.text,
-                    voice_key: voice.r2ObjectKey,
-                    temperature: input.temperature,
-                    top_p: input.topP,
-                    top_k: input.topK,
-                    repetition_penalty: input.repetitionPenalty,
-                    norm_loudness: true,
-                },
-                parseAs: "arrayBuffer",
-            });
-
-            if (error) {
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to generate audio",
-                });
-            }
-
-            if (!(data instanceof ArrayBuffer)) {
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Invalid audio response",
-                });
-            }
-
-            const buffer = Buffer.from(data);
-            let generationId: string | null = null;
-            let r2ObjectKey: string | null = null;
+            const generationId = crypto.randomUUID();
+            let wasPremium = false;
 
             try {
-                const generation = await prisma.generation.create({
-                    data: {
-                        generatedBy: ctx.userId,
-                        text: input.text,
-                        voiceName: voice.name,
-                        voiceId: voice.id,
+                wasPremium = await prisma.$transaction(async (tx) => {
+                    const user = await tx.user.findUniqueOrThrow({
+                        where: { id: ctx.userId },
+                        select: { isPremium: true },
+                    });
+                    const reserved = await tx.userCredits.updateMany({
+                        where: {
+                            userId: ctx.userId,
+                            totalCredits: { gt: 0 },
+                        },
+                        data: { totalCredits: { decrement: 1 } },
+                    });
+
+                    if (reserved.count !== 1) {
+                        throw new TRPCError({
+                            code: "FORBIDDEN",
+                            message: "You have no credits remaining. Please purchase a plan to continue.",
+                        });
+                    }
+
+                    const userCredits = await tx.userCredits.findUniqueOrThrow({
+                        where: { userId: ctx.userId },
+                        select: { id: true, totalCredits: true },
+                    });
+
+                    if (userCredits.totalCredits === 0) {
+                        await tx.user.update({
+                            where: { id: ctx.userId },
+                            data: { isPremium: false },
+                        });
+                    }
+
+                    await tx.generation.create({
+                        data: {
+                            id: generationId,
+                            generatedBy: ctx.userId,
+                            text: input.text,
+                            voiceName: voice.name,
+                            voiceId: voice.id,
+                            temperature: input.temperature,
+                            topP: input.topP,
+                            topK: input.topK,
+                            repetitionPenalty: input.repetitionPenalty,
+                        },
+                    });
+
+                    await tx.creditLog.create({
+                        data: {
+                            userId: ctx.userId,
+                            creditId: userCredits.id,
+                            generationId,
+                            credits: 1,
+                            creditsOps: "REMOVED",
+                            source: `generation:${generationId}`,
+                        },
+                    });
+
+                    return user.isPremium;
+                });
+
+                const { data, error } = await chatterbox.POST("/generate", {
+                    body: {
+                        prompt: input.text,
+                        voice_key: voice.r2ObjectKey,
                         temperature: input.temperature,
-                        topP: input.topP,
-                        topK: input.topK,
-                        repetitionPenalty: input.repetitionPenalty,
+                        top_p: input.topP,
+                        top_k: input.topK,
+                        repetition_penalty: input.repetitionPenalty,
+                        norm_loudness: true,
                     },
-                    select: {
-                        id: true,
-                    },
+                    parseAs: "arrayBuffer",
                 });
 
-                generationId = generation.id;
-
-                const response = await uploadAudiofile(buffer);
-                r2ObjectKey = response?.key || "";
-
-                await prisma.generation.update({
-                    where: {
-                        id: generation.id,
-                    },
-                    data: {
-                        r2ObjectKey,
-                    },
-                });
-            } catch {
-                if (generationId) {
-                    await prisma.generation
-                        .delete({
-                            where: {
-                                id: generationId,
-                            },
-                        })
-                        .catch(() => { });
+                if (error || !(data instanceof ArrayBuffer)) {
+                    throw new Error("TTS generation failed");
                 }
 
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to store generated audio",
-                });
-            }
+                const response = await uploadAudiofile(Buffer.from(data));
+                const r2ObjectKey = response?.key;
+                if (!r2ObjectKey) {
+                    throw new Error("Audio upload failed");
+                }
 
-            if (!generationId || !r2ObjectKey) {
+                await prisma.generation.update({
+                    where: { id: generationId },
+                    data: { r2ObjectKey },
+                });
+            } catch (error) {
+                if (error instanceof TRPCError && error.code === "FORBIDDEN") {
+                    throw error;
+                }
+
+                await prisma.$transaction(async (tx) => {
+                    const removed = await tx.generation.deleteMany({
+                        where: { id: generationId, generatedBy: ctx.userId },
+                    });
+
+                    if (removed.count === 1) {
+                        await tx.userCredits.update({
+                            where: { userId: ctx.userId },
+                            data: { totalCredits: { increment: 1 } },
+                        });
+                        if (wasPremium) {
+                            await tx.user.update({
+                                where: { id: ctx.userId },
+                                data: { isPremium: true },
+                            });
+                        }
+                    }
+                }).catch(() => undefined);
+
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to store generated audio",
+                    message: "Failed to generate audio. Your credit was restored.",
+                    cause: error,
                 });
             }
 

@@ -2,6 +2,7 @@ import { Headphones, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { AccountStatusButton } from "@/components/account-status-button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/theme-toggle";
@@ -25,6 +26,7 @@ export function PageHeader({
                 <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
+                <AccountStatusButton />
                 <ModeToggle />
                 <Button variant="outline" size="sm" asChild>
                     <Link href="mailto:mehulprajapati7456e@gmail.com">

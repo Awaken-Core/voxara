@@ -15,21 +15,12 @@ export const onboardingRouter = createTRPCRouter({
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: ctx.userId },
       select: {
-        continueWithPlanType: true,
-        subscriptions: {
-          where: {
-            isActive: true,
-            OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
-          },
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          select: { subscription: { select: { planType: true } } },
-        },
+        isPremium: true,
       },
     });
 
     return {
-      planType: user.subscriptions[0]?.subscription.planType ?? user.continueWithPlanType,
+      planType: user.isPremium ? "PREMIUM" as const : "FREE" as const,
     };
   }),
 

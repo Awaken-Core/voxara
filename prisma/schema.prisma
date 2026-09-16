@@ -50,7 +50,12 @@ enum UsingFor {
 enum PlanType {
   FREE
   PREMIUM
-  PRO
+  PRO  // Dont us this [PRO] -> will be removing this in further updates
+}
+
+enum CreditOps {
+  ADDED
+  REMOVED
 }
 
 model User {
@@ -76,12 +81,12 @@ model User {
 
   role UserRole @default(USER)
 
-  generations   Generation[]
-  voices        Voice[]
-  subscriptions UserSubscription[]
-  payments      Payment[]
-  userCredits   UserCredits?
-  creditLogs    CreditLog[]
+  generations      Generation[]
+  voices           Voice[]
+  payments         Payment[]
+  userCredits      UserCredits?
+  creditLogs       CreditLog[]
+  userPurchaseLogs UserPurchaseLog[]
 
   @@unique([email])
   @@map("user")
@@ -175,46 +180,45 @@ model Generation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  generatedByUser User? @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
+  generatedByUser User?      @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
+  creditLog       CreditLog?
 
   @@index([voiceId])
 }
 
 // Payments
-model Subscription {
-  id            String   @id
-  dodoProductId String?  @unique
-  price         Decimal  @db.Decimal(10, 2)
-  planType      PlanType @unique @default(FREE)
-  credits       Int      @default(3) // No. of voices can be generated
-  totalDuration Int      @default(30)
-  benefits      String[]
-  nonBenefits   String[]
-  createdAt     DateTime @default(now()) @db.Timestamptz
-  updatedAt     DateTime @updatedAt @db.Timestamptz
+model Pricing {
+  id        String   @id @default(uuid()) @db.Uuid
+  currency  String   @default("USD")
+  price     Decimal  @db.Decimal(10, 2)
+  credits   Int
+  benefits  String[]
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
 
-  userSubscriptions UserSubscription[]
-  transactions      PaymentTransaction[]
+  transactions PaymentTransaction[]
+  purchases    UserPurchaseLog[]
+  creditLogs   CreditLog[]
 }
 
-model UserSubscription {
-  id                 String    @id
-  dodoSubscriptionId String?   @unique
-  isActive           Boolean   @default(true)
-  subscriptionId     String
-  userId             String
-  startDate          DateTime? @db.Timestamptz
-  endDate            DateTime? @db.Timestamptz
-  createdAt          DateTime  @default(now()) @db.Timestamptz
-  updatedAt          DateTime  @updatedAt @db.Timestamptz
+model UserPurchaseLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String
+  pricingId        String   @db.Uuid
+  paymentId        String   @unique @db.Uuid
+  purchasedCredits Int
+  purchasedAmount  Decimal  @db.Decimal(10, 2)
+  currency         String
+  createdAt        DateTime @default(now()) @db.Timestamptz
 
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  pricing Pricing @relation(fields: [pricingId], references: [id], onDelete: Restrict)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
 
-  user        User          @relation(fields: [userId], references: [id])
-  creditLogs  CreditLog[]
-
-  @@index([subscriptionId])
   @@index([userId])
+  @@index([pricingId])
 }
 
 model Payment {
@@ -229,23 +233,23 @@ model Payment {
 
   user User @relation(fields: [userId], references: [id], onDelete: NoAction)
 
-  transaction PaymentTransaction?
+  transaction     PaymentTransaction?
+  userPurchaseLog UserPurchaseLog?
 
   @@index([userId])
 }
 
 model PaymentTransaction {
-  id             String @id @default(uuid()) @db.Uuid
-  paymentId      String @unique @db.Uuid
-  subscriptionId String
+  id        String @id @default(uuid()) @db.Uuid
+  paymentId String @unique @db.Uuid
+  pricingId String @db.Uuid
 
   createdAt DateTime @default(now()) @db.Timestamptz
 
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  pricing Pricing @relation(fields: [pricingId], references: [id], onDelete: Restrict)
 
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: NoAction)
-
-  @@index([subscriptionId])
+  @@index([pricingId])
 }
 
 model DodoWebhookEvent {
@@ -258,11 +262,11 @@ model DodoWebhookEvent {
 }
 
 model UserCredits {
-  id                 String @id @default(uuid())
-  userId             String @unique
-  totalCredits       Int    @default(0)
+  id           String @id @default(uuid())
+  userId       String @unique
+  totalCredits Int    @default(3)
 
-  user             User?             @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
   createdAt  DateTime    @default(now()) @db.Timestamptz
   updatedAt  DateTime    @updatedAt @db.Timestamptz
@@ -270,16 +274,20 @@ model UserCredits {
 }
 
 model CreditLog {
-  id                 String @id @default(uuid())
-  userId             String
-  userSubscriptionId String
-  creditId           String
+  id           String  @id @default(uuid())
+  userId       String
+  creditId     String
+  pricingId    String? @db.Uuid
+  generationId String? @unique
+  source       String? @unique
 
-  creditsAdded       Int   @default(0)
+  credits    Int       @default(0)
+  creditsOps CreditOps
 
-  user             User?             @relation(fields: [userId], references: [id], onDelete: NoAction)
-  userSubscription UserSubscription? @relation(fields: [userSubscriptionId], references: [id], onDelete: NoAction)
-  userCredit       UserCredits?      @relation(fields: [creditId], references: [id], onDelete: NoAction)
+  user       User?        @relation(fields: [userId], references: [id], onDelete: NoAction)
+  pricing    Pricing?     @relation(fields: [pricingId], references: [id], onDelete: SetNull)
+  userCredit UserCredits? @relation(fields: [creditId], references: [id], onDelete: NoAction)
+  generation Generation?  @relation(fields: [generationId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
