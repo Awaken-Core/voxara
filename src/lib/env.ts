@@ -19,6 +19,8 @@ export const env = createEnv({
     DODO_PAYMENTS_RETURN_URL: z.string().trim().pipe(z.url()),
     DODO_PAYMENTS_ENVIRONMENT: z.enum(["live_mode", "test_mode"]),
     DODOPAYMENTS_PRODUCT_ID: z.string().min(1),
+    UPSTASH_REDIS_REST_URL: z.string().min(1),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
   },
   client: {},
   experimental__runtimeEnv: {},
