@@ -50,7 +50,7 @@ enum UsingFor {
 enum PlanType {
   FREE
   PREMIUM
-  PRO  // Dont us this [PRO] -> will be removing this in further updates
+  PRO // Dont us this [PRO] -> will be removing this in further updates
 }
 
 enum CreditOps {
@@ -58,6 +58,10 @@ enum CreditOps {
   REMOVED
 }
 
+enum GuardRailType {
+  USERPROMPT
+  USERVOICE
+}
 model User {
   id            String    @id
   name          String
@@ -81,12 +85,13 @@ model User {
 
   role UserRole @default(USER)
 
-  generations      Generation[]
-  voices           Voice[]
-  payments         Payment[]
-  userCredits      UserCredits?
-  creditLogs       CreditLog[]
-  userPurchaseLogs UserPurchaseLog[]
+  generations        Generation[]
+  voices             Voice[]
+  payments           Payment[]
+  userCredits        UserCredits?
+  creditLogs         CreditLog[]
+  userPurchaseLogs   UserPurchaseLog[]
+  guardRailsMessages GuardRailsMessage[]
 
   @@unique([email])
   @@map("user")
@@ -288,6 +293,20 @@ model CreditLog {
   pricing    Pricing?     @relation(fields: [pricingId], references: [id], onDelete: SetNull)
   userCredit UserCredits? @relation(fields: [creditId], references: [id], onDelete: NoAction)
   generation Generation?  @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+}
+
+model GuardRailsMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  checkPass Boolean?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  guardrailType GuardRailType  @default(USERPROMPT)
+
+  response Json?
 
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz

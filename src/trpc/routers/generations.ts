@@ -5,6 +5,11 @@ import { prisma } from "@/lib/db";
 import { TEXT_MAX_LENGTH } from "@/features/text-to-speech/data/constants";
 import { authProcedure, createTRPCRouter } from "../init";
 import { uploadAudiofile } from "@/utils/uploadThings-server-functions";
+import { userPromtCheckGuardRail } from "@/lib/guardrails";
+import {
+    hasUnsupportedControlCharacters,
+    normalizePrompt,
+} from "@/lib/prompt-validation";
 
 export const generationsRouter = createTRPCRouter({
     getCredits: authProcedure.query(async ({ ctx }) => {
@@ -74,6 +79,31 @@ export const generationsRouter = createTRPCRouter({
             })
         )
         .mutation(async ({ input, ctx }) => {
+            // Normalize once so moderation and TTS always receive identical text.
+            const normalizedText = normalizePrompt(input.text);
+
+            if (!normalizedText) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Please enter some text.",
+                });
+            }
+
+            if (normalizedText.length > TEXT_MAX_LENGTH) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Text must be ${TEXT_MAX_LENGTH} characters or fewer.`,
+                });
+            }
+
+            // Allow tabs and line breaks, but reject other C0/C1 control bytes.
+            if (hasUnsupportedControlCharacters(normalizedText)) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Your text contains unsupported control characters.",
+                });
+            }
+
             const voice = await prisma.voice.findUnique({
                 where: {
                     id: input.voiceId,
@@ -105,6 +135,42 @@ export const generationsRouter = createTRPCRouter({
                     message: "Voice audio not available",
                 });
             }
+
+            // GuardRail Check
+            try {
+                const guard = await userPromtCheckGuardRail(normalizedText);
+                await prisma.guardRailsMessage.create({
+                    data: {
+                        userId: ctx.userId,
+                        checkPass: guard.checkPass ?? guard.success,
+                        response: guard,
+                    },
+                });
+
+                if (!guard.success) {
+                    throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "We couldn't verify your text. Please try again.",
+                    });
+                }
+
+                if (!guard.checkPass) {
+                    throw new TRPCError({
+                        code: "FORBIDDEN",
+                        message: "Your text didn't pass our content safety check. Please revise it and try again.",
+                    });
+                }
+            } catch (e) {
+                 if (e instanceof TRPCError) {
+                    throw e;
+                }
+
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to guard audio. Try later",
+                    cause: e,
+                });
+            };
 
             const generationId = crypto.randomUUID();
             let wasPremium = false;
@@ -146,7 +212,7 @@ export const generationsRouter = createTRPCRouter({
                         data: {
                             id: generationId,
                             generatedBy: ctx.userId,
-                            text: input.text,
+                            text: normalizedText,
                             voiceName: voice.name,
                             voiceId: voice.id,
                             temperature: input.temperature,
@@ -172,7 +238,7 @@ export const generationsRouter = createTRPCRouter({
 
                 const { data, error } = await chatterbox.POST("/generate", {
                     body: {
-                        prompt: input.text,
+                        prompt: normalizedText,
                         voice_key: voice.r2ObjectKey,
                         temperature: input.temperature,
                         top_p: input.topP,

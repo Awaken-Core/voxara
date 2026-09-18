@@ -21,6 +21,8 @@ export const env = createEnv({
     DODOPAYMENTS_PRODUCT_ID: z.string().min(1),
     UPSTASH_REDIS_REST_URL: z.string().min(1),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+    OPENROUTER_API: z.string().min(1),
+    OPENROUTER_MODELID: z.string().min(1),
   },
   client: {},
   experimental__runtimeEnv: {},
