@@ -15,6 +15,7 @@ const createVoiceSchema = z.object({
 });
 
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
+const MAX_UPLOAD_DURATION_SECONDS = 10 * 60;
 const MIN_AUDIO_DURATION_SECONDS = 10;
 
 export async function POST(request: Request) {
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
         );
     }
 
+    // TODO: This is temporary stuff -> will be changing this in future
     if (fileBuffer.byteLength > MAX_UPLOAD_SIZE_BYTES) {
         return Response.json(
             { error: "Audio file exceeds the 20 MB size limit" },
@@ -93,6 +95,16 @@ export async function POST(request: Request) {
         return Response.json(
             {
                 error: `Audio too short (${duration.toFixed(1)}s). Minimum duration is ${MIN_AUDIO_DURATION_SECONDS} seconds.`,
+            },
+            { status: 422 },
+        );
+    }
+
+    // TODO: This is temporary stuff -> will be changing this in future
+    if (duration > MAX_UPLOAD_DURATION_SECONDS) {
+        return Response.json(
+            {
+                error: `Audio too long (${duration.toFixed(1)}s). MAximum duration is ${MAX_UPLOAD_DURATION_SECONDS/60} minutes.`,
             },
             { status: 422 },
         );

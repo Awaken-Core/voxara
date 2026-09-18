@@ -10,6 +10,36 @@ export const auth = betterAuth({
         provider: "postgresql",
     }),
 
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user) => {
+                    await prisma.$transaction(async (tx) => {
+                        const crdt = await tx.userCredits.upsert({
+                            where: {
+                                userId: user.id,
+                            },
+                            update: {},
+                            create: {
+                                userId: user.id,
+                            },
+                        });
+
+                        await tx.creditLog.create({
+                            data: {
+                                userId: user.id,
+                                creditId: crdt.id,
+                                creditsOps: "ADDED",
+                                credits: crdt.totalCredits,
+                                source: `signup:${user.id}`,
+                            },
+                        });
+                    });
+                },
+            }
+        }
+    },
+
     emailAndPassword: {
         enabled: true,
     },

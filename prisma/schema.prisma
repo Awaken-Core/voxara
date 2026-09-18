@@ -34,6 +34,7 @@ enum UserRole {
 enum PaymentStatus {
   PENDING
   COMPLETED
+  CANCELLED
   FAILED
   REFUNDED
 }
@@ -49,9 +50,18 @@ enum UsingFor {
 enum PlanType {
   FREE
   PREMIUM
-  PRO
+  PRO // Dont us this [PRO] -> will be removing this in further updates
 }
 
+enum CreditOps {
+  ADDED
+  REMOVED
+}
+
+enum GuardRailType {
+  USERPROMPT
+  USERVOICE
+}
 model User {
   id            String    @id
   name          String
@@ -73,12 +83,15 @@ model User {
   // General faq will also be given, during onboard session
   // -------------------------------
 
-  role     UserRole @default(USER)
+  role UserRole @default(USER)
 
-  generations   Generation[]
-  voices        Voice[]
-  subscriptions UserSubscription[]
-  payments      Payment[]
+  generations        Generation[]
+  voices             Voice[]
+  payments           Payment[]
+  userCredits        UserCredits?
+  creditLogs         CreditLog[]
+  userPurchaseLogs   UserPurchaseLog[]
+  guardRailsMessages GuardRailsMessage[]
 
   @@unique([email])
   @@map("user")
@@ -148,7 +161,7 @@ model Voice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([variant])
 }
@@ -172,42 +185,45 @@ model Generation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  generatedByUser User? @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
+  generatedByUser User?      @relation(fields: [generatedBy], references: [id], onDelete: Cascade)
+  creditLog       CreditLog?
 
   @@index([voiceId])
 }
 
 // Payments
-model Subscription {
-  id            String   @id
-  price         Decimal  @db.Decimal(10, 2)
-  planType      PlanType @default(FREE)
-  totalDuration Int      @default(30)
-  benefits      String[]
-  nonBenefits   String[]
-  createdAt     DateTime @default(now()) @db.Timestamptz
-  updatedAt     DateTime @updatedAt @db.Timestamptz
+model Pricing {
+  id        String   @id @default(uuid()) @db.Uuid
+  currency  String   @default("USD")
+  price     Decimal  @db.Decimal(10, 2)
+  credits   Int
+  benefits  String[]
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
 
-  userSubscriptions UserSubscription[]
-  transactions      PaymentTransaction[]
+  transactions PaymentTransaction[]
+  purchases    UserPurchaseLog[]
+  creditLogs   CreditLog[]
 }
 
-model UserSubscription {
-  id             String    @id
-  isActive       Boolean   @default(true)
-  subscriptionId String
-  userId         String
-  startDate      DateTime? @db.Timestamptz
-  endDate        DateTime? @db.Timestamptz
-  createdAt      DateTime  @default(now()) @db.Timestamptz
-  updatedAt      DateTime  @updatedAt @db.Timestamptz
+model UserPurchaseLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String
+  pricingId        String   @db.Uuid
+  paymentId        String   @unique @db.Uuid
+  purchasedCredits Int
+  purchasedAmount  Decimal  @db.Decimal(10, 2)
+  currency         String
+  createdAt        DateTime @default(now()) @db.Timestamptz
 
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  pricing Pricing @relation(fields: [pricingId], references: [id], onDelete: Restrict)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
 
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([subscriptionId])
   @@index([userId])
+  @@index([pricingId])
 }
 
 model Payment {
@@ -222,23 +238,23 @@ model Payment {
 
   user User @relation(fields: [userId], references: [id], onDelete: NoAction)
 
-  transaction PaymentTransaction?
+  transaction     PaymentTransaction?
+  userPurchaseLog UserPurchaseLog?
 
   @@index([userId])
 }
 
 model PaymentTransaction {
-  id             String @id @default(uuid()) @db.Uuid
-  paymentId      String @unique @db.Uuid
-  subscriptionId String
+  id        String @id @default(uuid()) @db.Uuid
+  paymentId String @unique @db.Uuid
+  pricingId String @db.Uuid
 
   createdAt DateTime @default(now()) @db.Timestamptz
 
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  pricing Pricing @relation(fields: [pricingId], references: [id], onDelete: Restrict)
 
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: NoAction)
-
-  @@index([subscriptionId])
+  @@index([pricingId])
 }
 
 model DodoWebhookEvent {
@@ -248,4 +264,50 @@ model DodoWebhookEvent {
   payload   Json
   processed Boolean  @default(false)
   createdAt DateTime @default(now()) @db.Timestamptz
+}
+
+model UserCredits {
+  id           String @id @default(uuid())
+  userId       String @unique
+  totalCredits Int    @default(3)
+
+  user User? @relation(fields: [userId], references: [id])
+
+  createdAt  DateTime    @default(now()) @db.Timestamptz
+  updatedAt  DateTime    @updatedAt @db.Timestamptz
+  creditLogs CreditLog[]
+}
+
+model CreditLog {
+  id           String  @id @default(uuid())
+  userId       String
+  creditId     String
+  pricingId    String? @db.Uuid
+  generationId String? @unique
+  source       String? @unique
+
+  credits    Int       @default(0)
+  creditsOps CreditOps
+
+  user       User?        @relation(fields: [userId], references: [id], onDelete: NoAction)
+  pricing    Pricing?     @relation(fields: [pricingId], references: [id], onDelete: SetNull)
+  userCredit UserCredits? @relation(fields: [creditId], references: [id], onDelete: NoAction)
+  generation Generation?  @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+}
+
+model GuardRailsMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  checkPass Boolean?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction)
+
+  guardrailType GuardRailType  @default(USERPROMPT)
+
+  response Json?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
 }

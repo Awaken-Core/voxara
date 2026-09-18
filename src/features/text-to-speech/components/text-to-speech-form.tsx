@@ -4,7 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { formOptions } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useTRPC } from "@/trpc/client";
 import { useAppForm } from "@/hooks/use-app-form";
@@ -42,6 +42,7 @@ export function TextToSpeechForm({
 }) {
   const trpc = useTRPC();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const createMutation = useMutation(
     trpc.generations.create.mutationOptions({}),
   );
@@ -61,6 +62,10 @@ export function TextToSpeechForm({
           topP: value.topP,
           topK: value.topK,
           repetitionPenalty: value.repetitionPenalty,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: trpc.generations.getCredits.queryKey(),
         });
 
         toast.success("Audio generated successfully!");
