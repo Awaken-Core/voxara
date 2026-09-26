@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryState } from "nuqs";
 import { useDebouncedCallback } from "use-debounce";
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 
 import {
     InputGroup,
@@ -9,6 +9,8 @@ import {
     InputGroupAddon,
 } from "@/components/ui/input-group";
 import { voicesSearchParams } from "@/features/voices/lib/params";
+import { VoiceCreateDialog } from "./voice-create-dialog";
+import { Button } from "@/components/ui/button";
 
 export function VoicesToolbar() {
     const [query, setQuery] = useQueryState(
@@ -48,7 +50,7 @@ export function VoicesToolbar() {
                             }}
                         />
                     </InputGroup>
-                    {/* Custom voice uploads are disabled while voice cloning is unsupported.
+                  
                     <div className="ml-auto hidden lg:block">
                         <VoiceCreateDialog>
                             <Button size="sm">
@@ -65,7 +67,6 @@ export function VoicesToolbar() {
                             </Button>
                         </VoiceCreateDialog>
                     </div>
-                    */}
                 </div>
             </div>
         </div>
