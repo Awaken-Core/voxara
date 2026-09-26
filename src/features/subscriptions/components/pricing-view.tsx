@@ -25,7 +25,7 @@ export function PricingView() {
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-8 lg:py-16">
         <div className="mx-auto max-w-2xl text-center">
           <Badge variant="secondary">Simple pricing</Badge>
-          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Buy credits when you need them</h1>
+          <h1 className="mt-4 text-3xl sm:text-4xl">Buy credits when you need them</h1>
           <p className="mt-3 text-muted-foreground">You currently have {plans.data?.totalCredits ?? 0} credits. Purchased credits are added to your balance.</p>
         </div>
 
@@ -42,10 +42,10 @@ export function PricingView() {
               const isCheckingOut = checkout.isPending && checkout.variables?.pricingId === plan.id;
               return (
                 <article key={plan.id} className="relative flex min-h-96 flex-col rounded-xl border bg-card p-6">
-                  <h2 className="text-xl font-semibold">{plan.credits} credits</h2>
+                  <h2 className="text-xl">{plan.credits} credits</h2>
                   <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">Generate up to {plan.credits} audio clips.</p>
                   <div className="mt-5 flex items-end gap-1">
-                    <span className="text-4xl font-semibold tracking-tight">{plan.currency === "USD" ? "$" : `${plan.currency} `}{plan.price}</span>
+                    <span className="text-4xl font-normal tracking-[-0.05em]">{plan.currency === "USD" ? "$" : `${plan.currency} `}{plan.price}</span>
                     <span className="pb-1 text-sm text-muted-foreground">one time</span>
                   </div>
                   <ul className="mt-7 mb-4 space-y-3">

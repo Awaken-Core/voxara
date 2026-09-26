@@ -48,7 +48,7 @@ export function AuthShell({ children, headline }: AuthShellProps) {
               height={32}
               className="rounded-sm py-6 mx-1 brightness-150"
             />
-            <h1 className="max-w-xs text-3xl font-medium leading-[1.08] tracking-[-0.04em] text-white mx-auto">
+            <h1 className="mx-auto max-w-xs text-3xl leading-[1.08] text-white">
               {headline}
             </h1>
           </div>

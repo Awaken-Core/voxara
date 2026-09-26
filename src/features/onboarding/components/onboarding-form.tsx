@@ -111,88 +111,87 @@ export function OnboardingForm() {
   }
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-black px-5 py-6 font-sans text-zinc-50 antialiased sm:px-8">
-      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-5xl flex-col">
+    <main className="min-h-dvh overflow-x-hidden bg-[#0a0a0a] px-5 py-5 font-sans text-zinc-50 antialiased sm:px-8">
+      <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-4xl flex-col">
         <header className="flex h-8 items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Image src="/logo.svg" alt="Voxara" width={28} height={28} className="rounded-md grayscale brightness-[2.5]" />
-            <span className="text-[15px] font-semibold tracking-[-0.02em]">Voxara</span>
+            <span className="text-[15px] font-medium tracking-[-0.02em]">Voxara</span>
           </div>
-          <span className="font-mono text-[11px] text-zinc-500">STEP {step} OF 2</span>
+          <span className="text-[11px] font-medium tracking-wide text-zinc-500">STEP {step} OF 2</span>
         </header>
 
-        <div className="mt-5 grid grid-cols-2 gap-2" aria-label={`Step ${step} of 2`}>
-          <div className="h-px bg-white" />
-          <div className={cn("h-px transition-colors duration-300", step === 2 ? "bg-white" : "bg-zinc-800")} />
+        <div className="mt-4 grid grid-cols-2 gap-1.5" aria-label={`Step ${step} of 2`}>
+          <div className="h-0.5 rounded-full bg-white" />
+          <div className={cn("h-0.5 rounded-full transition-colors duration-300", step === 2 ? "bg-white" : "bg-zinc-800")} />
         </div>
 
-        <section className="flex flex-1 justify-center py-12 sm:py-16">
-          <div className="w-full max-w-4xl">
+        <section className="flex flex-1 justify-center py-9 sm:py-12">
+          <div className="w-full max-w-3xl">
             {step === 1 ? (
-              <form onSubmit={continueToFaq} className="space-y-8">
-                <div className="space-y-3 text-center">
-                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-zinc-500">Workspace setup</p>
-                  <h1 className="text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">What brings you here?</h1>
-                  <p className="mx-auto max-w-lg text-sm leading-6 text-zinc-500">A few quick details help us shape your workspace.</p>
+              <form onSubmit={continueToFaq} className="space-y-7">
+                <div className="space-y-3">
+                  <p className="text-sm text-zinc-500">Workspace setup</p>
+                  <h1 className="max-w-2xl text-4xl leading-[1.02] sm:text-5xl">What brings you to Voxara?</h1>
+                  <p className="max-w-lg text-sm leading-6 text-zinc-500">Tell us what you&apos;re creating so we can prepare the right starting point.</p>
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 border-y border-zinc-800 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-9 items-center justify-center rounded-md border border-zinc-800 bg-black text-zinc-400">
-                      <Sparkles className="size-5" />
+                    <div className="flex size-8 items-center justify-center rounded-md border border-zinc-800 bg-zinc-950 text-zinc-400">
+                      <Sparkles className="size-4" />
                     </div>
                     <div>
-                      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-zinc-500">Current plan</p>
-                      <p className="mt-0.5 font-semibold capitalize">{currentPlan.isPending ? "Loading…" : `${(currentPlan.data?.planType ?? "FREE").toLowerCase()} plan`}</p>
+                      <p className="text-xs text-zinc-500">Starting plan</p>
+                      <p className="text-sm font-medium capitalize">{currentPlan.isPending ? "Loading…" : `${(currentPlan.data?.planType ?? "FREE").toLowerCase()} plan`}</p>
                     </div>
                   </div>
-                  <Button type="button" variant="outline" onClick={() => setPricingOpen(true)} className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-zinc-900 hover:text-white">
-                    View pricing
-                    <ArrowRight />
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setPricingOpen(true)} className="justify-start px-2 text-zinc-400 hover:bg-zinc-900 hover:text-white">
+                    Compare plans <ArrowRight />
                   </Button>
                 </div>
 
                 <div className="space-y-4">
                   <Label>How will you mainly use Voxara?</Label>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                     {useCases.map(({ value, label, icon: Icon }) => {
                       const selected = usingFor === value;
                       return (
-                        <button key={value} type="button" onClick={() => setUsingFor(value)} aria-pressed={selected} className={cn("relative flex h-28 flex-col items-start rounded-lg border p-4 text-left transition-colors duration-150", selected ? "border-zinc-400 bg-zinc-900" : "border-zinc-800 bg-zinc-950 hover:border-zinc-600 hover:bg-zinc-900/70")}>
-                          <Icon className={cn("size-4 shrink-0", selected ? "text-white" : "text-zinc-500")} />
-                          <span className="mt-auto flex min-h-10 items-end text-sm font-medium leading-5">{label}</span>
-                          {selected && <Check className="absolute right-3 top-3 size-4 text-white" />}
+                        <button key={value} type="button" onClick={() => setUsingFor(value)} aria-pressed={selected} className={cn("relative flex min-h-16 items-center gap-3 rounded-lg border px-3.5 py-3 text-left transition-colors duration-150", selected ? "border-zinc-500 bg-zinc-900 text-white" : "border-zinc-800 bg-zinc-950/70 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200")}>
+                          <Icon className="size-4 shrink-0" />
+                          <span className="pr-5 text-sm font-medium leading-5">{label}</span>
+                          {selected && <Check className="absolute right-3 size-4 text-white" />}
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-7">
+                <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="primary-goals" className="text-sm font-medium px-1">What&apos;s your primary goal?</Label>
-                    <Textarea id="primary-goals" value={primaryGoals} onChange={(event) => setPrimaryGoals(event.target.value)} maxLength={500} required className="h-24 min-h-24 resize-none border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:border-zinc-500 focus-visible:ring-zinc-500/20" />
+                    <Textarea id="primary-goals" value={primaryGoals} onChange={(event) => setPrimaryGoals(event.target.value)} maxLength={500} required className="h-24 min-h-24 resize-none rounded-lg border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:border-zinc-500 focus-visible:ring-zinc-500/20" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="note-for-us" className="text-sm font-medium px-1">Anything else we should know? <span className="font-normal text-white/35">(optional)</span></Label>
-                    <Textarea id="note-for-us" value={noteForUs} onChange={(event) => setNoteForUs(event.target.value)} maxLength={1000} placeholder="Tell us about your workflow, team, or ideas…" className="h-24 min-h-24 resize-none border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:border-zinc-500 focus-visible:ring-zinc-500/20" />
+                    <Textarea id="note-for-us" value={noteForUs} onChange={(event) => setNoteForUs(event.target.value)} maxLength={1000} placeholder="Tell us about your workflow, team, or ideas…" className="h-24 min-h-24 resize-none rounded-lg border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:border-zinc-500 focus-visible:ring-zinc-500/20" />
                   </div>
                 </div>
 
                 {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-                <div className="flex justify-end">
-                  <Button size="lg" className="h-11 rounded-lg bg-white px-5 text-black hover:bg-white/90">Continue <ArrowRight /></Button>
+                <div className="flex justify-end border-t border-zinc-800 pt-5">
+                  <Button size="lg" className="h-10 rounded-md bg-white px-5 text-black hover:bg-white/90">Continue <ArrowRight /></Button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-7 w-[90%] mx-auto">
-                <div className="space-y-2 text-center">
-                  <div className="mx-auto flex size-10 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-400"><Headphones className="size-4" /></div>
-                  <h1 className="text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">A few things worth knowing</h1>
-                  <p className="text-sm leading-6 text-zinc-500">Quick answers before you start creating.</p>
+              <div className="space-y-7">
+                <div className="space-y-3">
+                  <div className="flex size-9 items-center justify-center rounded-md border border-zinc-800 bg-zinc-950 text-zinc-400"><Headphones className="size-4" /></div>
+                  <h1 className="max-w-2xl text-4xl leading-[1.02] sm:text-5xl">Before you start creating</h1>
+                  <p className="text-sm leading-6 text-zinc-500">A few useful answers about your workspace and content.</p>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-5 sm:px-7">
+                <div className="border-y border-zinc-800 px-1 sm:px-2">
                   <Accordion type="single" collapsible>
                     {faqs.map(([question, answer], index) => (
                       <AccordionItem key={question} value={`faq-${index}`} className="border-white/10">
@@ -203,16 +202,16 @@ export function OnboardingForm() {
                   </Accordion>
                 </div>
 
-                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-2">
+                <div className="flex w-full flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-950/70 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <CheckboxComp checked={checkedTerms} onCheckedChange={setCheckedTerms} label="Accept terms and conditions" />
-                  <Link href="/policies/terms-and-conditions" className="shrink-0 font-sans text-sm text-white/55 hover:underline">Read! Terms and conditions</Link>
+                  <Link href="/policies/terms-and-conditions" target="_blank" className="shrink-0 text-sm text-zinc-400 underline underline-offset-4 hover:text-white">Read terms</Link>
                 </div>
 
                 {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={completeOnboarding.isPending} className="text-white/65 hover:bg-white/10 hover:text-white"><ArrowLeft /> Back</Button>
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="button" size="lg" onClick={finish} disabled={completeOnboarding.isPending || !checkedTerms} className="h-11 rounded-lg bg-white px-5 text-black hover:bg-white/90">
+                    <Button type="button" size="lg" onClick={finish} disabled={completeOnboarding.isPending || !checkedTerms} className="h-10 rounded-md bg-white px-5 text-black hover:bg-white/90">
                       {completeOnboarding.isPending ? <Loader2 className="animate-spin" /> : <Mic2 />}
                       Continue with free account
                     </Button>
@@ -238,8 +237,8 @@ export function OnboardingForm() {
               { name: "Pro", price: "$49", description: "For demanding workflows", features: ["Highest usage limits", "Priority processing", "Priority support"] },
             ].map((plan) => (
               <article key={plan.name} className={cn("relative flex min-h-72 flex-col rounded-lg border bg-zinc-950 p-5", plan.popular ? "border-zinc-400" : "border-zinc-800")}>
-                {plan.popular && <span className="absolute right-4 top-4 rounded-full border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-[10px] text-zinc-300">POPULAR</span>}
-                <h3 className="font-semibold">{plan.name}</h3>
+                {plan.popular && <span className="absolute right-4 top-4 rounded-full border border-zinc-700 bg-zinc-900 px-2 py-1 text-[10px] font-medium tracking-wide text-zinc-300">POPULAR</span>}
+                <h3>{plan.name}</h3>
                 <p className="mt-1 text-sm text-white/45">{plan.description}</p>
                 <p className="mt-5"><span className="text-3xl font-semibold tracking-tight">{plan.price}</span><span className="text-sm text-white/40"> / month</span></p>
                 <ul className="mt-6 space-y-3">

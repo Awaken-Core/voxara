@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { AudioLines, Coins, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -21,27 +20,22 @@ export function TextInputPanel() {
     };
 
     return (
-        <div className="
-      rounded-[22px] bg-linear-185 from-[#ff8ee3] from-15% via-[#57d7e0] via-39% to-[#dbf1f2] to-85% p-0.5 shadow-[0_0_0_4px_var(--background)]
-    ">
-            {/* Using px values for border-radius to ensure proper gradient border math (outer - padding = inner). */}
-            {/* Standard classes like rounded-4xl use CSS calc() which doesn't align cleanly at corners. */}
-            <div className="rounded-[20px] bg-muted p-1">
-                <div className="space-y-4 rounded-2xl bg-card p-4 text-card-foreground drop-shadow-xs">
+        <div className="rounded-[22px] border border-white/20 bg-white/[0.07] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_20px_50px_-28px_rgba(0,0,0,.9)] backdrop-blur-2xl">
+            <div className="rounded-[17px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)] sm:px-5 sm:py-4">
+                <div className="space-y-3">
                     <Textarea
-                        placeholder="Start typing or paste your text here..."
-                        className="min-h-35 resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+                        aria-label="Text to turn into speech"
+                        placeholder="What would you like Voxara to say?"
+                        className="min-h-16 resize-none border-0 bg-transparent p-0 text-base text-white shadow-none placeholder:text-white/45 focus-visible:ring-0 sm:min-h-18 dark:bg-transparent"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         maxLength={TEXT_MAX_LENGTH}
                     />
 
-                    {/* Bottom info */}
-
-                    <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="gap-1.5 border-dashed">
-                            <Coins className="size-3 text-chart-5" />
-                            <span className="text-xs">
+                    <div className="flex flex-col gap-3 border-t border-white/8 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-white/50">
+                            <span className="inline-flex items-center gap-1.5">
+                                <Coins className="size-3.5" />
                                 {text.length === 0 ? (
                                     "Start typing to estimate"
                                 ) : (
@@ -53,24 +47,18 @@ export function TextInputPanel() {
                                     </>
                                 )}
                             </span>
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                            {text.trim().length.toLocaleString()} / {TEXT_MAX_LENGTH.toLocaleString()} characters
-                        </span>
+                            <span>{text.trim().length.toLocaleString()} / {TEXT_MAX_LENGTH.toLocaleString()}</span>
+                        </div>
+                        <Button
+                            size="sm"
+                            disabled={!text.trim()}
+                            onClick={handleGenerate}
+                            className="h-9 rounded-md border border-white/15 bg-white px-4 text-[#171717] shadow-[0_1px_1px_rgba(0,0,0,.2)] hover:bg-white/90 disabled:bg-white/10 disabled:text-white/30"
+                        >
+                            {text.trim() ? <AudioLines /> : <Sparkles />}
+                            Generate speech
+                        </Button>
                     </div>
-                </div>
-
-                {/* Action bar */}
-
-                <div className="flex items-center justify-end p-3">
-                    <Button
-                        size="sm"
-                        disabled={!text.trim()}
-                        onClick={handleGenerate}
-                        className="w-full lg:w-auto"
-                    >
-                        Generate speech
-                    </Button>
                 </div>
             </div>
         </div>

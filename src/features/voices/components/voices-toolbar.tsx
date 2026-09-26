@@ -27,8 +27,8 @@ export function VoicesToolbar() {
     return (
         <div className="space-y-4">
             <div>
-                <h2 className="text-xl lg:text-2xl font-semibold tracking-tight">
-                    All Libraries
+                <h2 className="text-xl lg:text-2xl font-medium">
+                    Voice library
                 </h2>
                 <p className="text-sm text-muted-foreground">
                     Discover available voices

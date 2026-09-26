@@ -1,51 +1,18 @@
-"use client";
-
-import { useTheme } from "next-themes";
-
-import MoltenMetal from "@/components/auth/auth-background";
-import { WavyBackground } from "@/components/ui/wavy-background";
+import Image from "next/image";
 
 export function HeroPattern() {
-    const { resolvedTheme } = useTheme();
-
     return (
-        <div className="pointer-events-none absolute inset-0 hidden overflow-hidden lg:block">
-            {resolvedTheme === "dark" ? (
-                <>
-                    <MoltenMetal
-                        color1="#5227FF"
-                        color2="#FF9FFC"
-                        color3="#FFFFFF"
-                        speed={0.35}
-                        scale={4}
-                        detail={3}
-                        glow={1.6}
-                        coreSize={0.1}
-                        swirl={1}
-                        fold={-0.2}
-                        blackPoint={0.05}
-                        brightness={1.3}
-                        colorMode="molten"
-                        grain
-                        grainIntensity={0.05}
-                        mouseInteraction={false}
-                        opacity={1}
-                    />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,7,18,.08)_0%,rgba(10,7,18,.18)_48%,rgba(10,7,18,.32)_100%)]" />
-                </>
-            ) : (
-                <WavyBackground
-                    colors={["#EF4444", "#F43F5E", "#EC4899", "#D946EF"]}
-                    backgroundFill="hsl(0 0% 100%)"
-                    blur={3}
-                    speed="slow"
-                    waveOpacity={0.1}
-                    waveWidth={60}
-                    waveYOffset={250}
-                    containerClassName="h-full"
-                    className="hidden"
-                />
-            )}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#090909]">
+            <Image
+                src="/background-bg.png"
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1024px) calc(100vw - 16rem), 100vw"
+                className="object-cover object-bottom opacity-70 saturate-75"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,8,.78)_0%,rgba(8,8,8,.5)_42%,rgba(5,5,5,.78)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_26%,rgba(255,255,255,.07),transparent_48%)]" />
         </div>
     );
 }

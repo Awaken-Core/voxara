@@ -6,7 +6,13 @@ import { ThemeProvider } from "@/theme-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      forcedTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+    >
       {children}
     </ThemeProvider>
   );

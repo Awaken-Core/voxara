@@ -12,7 +12,7 @@ export function VoicesList({ title, voices }: VoicesListProps) {
     if (!voices.length) {
         return (
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+                <h3 className="text-lg">{title}</h3>
 
                 <div className="flex flex-col items-center justify-center gap-3 py-12">
                     <div className="relative flex h-14 w-32 items-center justify-center">
@@ -31,7 +31,7 @@ export function VoicesList({ title, voices }: VoicesListProps) {
 
                     </div>
 
-                    <p className="text-lg font-semibold tracking-tight text-foreground">
+                    <p className="text-lg font-normal tracking-[-0.035em] text-foreground">
                         No voices found
                     </p>
 
@@ -45,7 +45,7 @@ export function VoicesList({ title, voices }: VoicesListProps) {
 
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+            <h3 className="text-lg">{title}</h3>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {voices.map((voice) => (
                     <VoiceCard key={voice.id} voice={voice} />

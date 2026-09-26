@@ -68,7 +68,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     return (
         <div className="space-y-6">
             <div className="space-y-2">
-                <h2 className="text-2xl font-semibold tracking-tight">
+                <h2 className="text-2xl">
                     {isSignUp ? "Create your account" : "Welcome back"}
                 </h2>
                 <p className="text-sm text-white/60">

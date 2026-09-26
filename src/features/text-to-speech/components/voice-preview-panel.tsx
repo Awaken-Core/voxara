@@ -80,7 +80,7 @@ export function VoicePreviewPanel({
         <div className="h-full gap-8 flex-col border-t hidden flex-1 lg:flex">
             {/* Header */}
             <div className="p-6 pb-0">
-                <h3 className="font-semibold text-foreground">Voice preview</h3>
+                <h3 className="text-foreground">Voice preview</h3>
             </div>
 
             {/* Content */}
