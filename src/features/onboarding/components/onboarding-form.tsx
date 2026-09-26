@@ -205,7 +205,7 @@ export function OnboardingForm() {
 
                 <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-2">
                   <CheckboxComp checked={checkedTerms} onCheckedChange={setCheckedTerms} label="Accept terms and conditions" />
-                  <Link href="/terms-and-condition" className="shrink-0 font-sans text-sm text-white/55 hover:underline">Read! Terms and conditions</Link>
+                  <Link href="/policies/terms-and-conditions" className="shrink-0 font-sans text-sm text-white/55 hover:underline">Read! Terms and conditions</Link>
                 </div>
 
                 {error && <p role="alert" className="text-sm text-red-400">{error}</p>}

@@ -38,6 +38,7 @@ import {
     CreditCard,
     ChevronsUpDown,
     LogOut,
+    ScrollText,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -136,6 +137,11 @@ export function DashboardSidebar() {
             title: "Help and support",
             url: "mailto:mehulprajapati7456e@gmail.com",
             icon: Headphones,
+        },
+        {
+            title: "Terms and Conditions",
+            url: "/terms-and-conditions",
+            icon: ScrollText,
         },
     ];
 
