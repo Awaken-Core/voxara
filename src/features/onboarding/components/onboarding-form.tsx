@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { UsingFor } from "@prisma/client";
 import {
   ArrowLeft,
   ArrowRight,
@@ -33,10 +34,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
+import Link from "next/link";
 
 const useCases = [
   { value: "PERSONAL", label: "Personal projects", icon: UserRound },
@@ -44,7 +47,11 @@ const useCases = [
   { value: "STUDENT", label: "School or learning", icon: GraduationCap },
   { value: "FREELANCE", label: "Freelance work", icon: UsersRound },
   { value: "OTHERS", label: "Something else", icon: Sparkles },
-] as const;
+] as const satisfies ReadonlyArray<{
+  value: UsingFor;
+  label: string;
+  icon: typeof UserRound;
+}>;
 
 const faqs = [
   ["What can I create with Voxara?", "Turn scripts, articles, lessons, and ideas into natural-sounding speech, or create a custom voice for your projects."],
@@ -55,17 +62,16 @@ const faqs = [
   ["Where can I get help?", "You can reach the Voxara team from the app whenever you need help with setup or a project."],
 ] as const;
 
-type UseCase = (typeof useCases)[number]["value"];
-
 export function OnboardingForm() {
   const router = useRouter();
   const trpc = useTRPC();
   const [step, setStep] = useState<1 | 2>(1);
-  const [usingFor, setUsingFor] = useState<UseCase>("PERSONAL");
+  const [usingFor, setUsingFor] = useState<UsingFor>("PERSONAL");
   const [primaryGoals, setPrimaryGoals] = useState("Create natural voiceovers for my content");
   const [noteForUs, setNoteForUs] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pricingOpen, setPricingOpen] = useState(false);
+  const [checkedTerms, setCheckedTerms] = useState(false);
   const currentPlan = useQuery(trpc.onboarding.getCurrentPlan.queryOptions());
 
   const completeOnboarding = useMutation(
@@ -197,11 +203,16 @@ export function OnboardingForm() {
                   </Accordion>
                 </div>
 
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-2">
+                  <CheckboxComp checked={checkedTerms} onCheckedChange={setCheckedTerms} label="Accept terms and conditions" />
+                  <Link href="/terms-and-condition" className="shrink-0 font-sans text-sm text-white/55 hover:underline">Read! Terms and conditions</Link>
+                </div>
+
                 {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={completeOnboarding.isPending} className="text-white/65 hover:bg-white/10 hover:text-white"><ArrowLeft /> Back</Button>
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="button" size="lg" onClick={finish} disabled={completeOnboarding.isPending} className="h-11 rounded-lg bg-white px-5 text-black hover:bg-white/90">
+                    <Button type="button" size="lg" onClick={finish} disabled={completeOnboarding.isPending || !checkedTerms} className="h-11 rounded-lg bg-white px-5 text-black hover:bg-white/90">
                       {completeOnboarding.isPending ? <Loader2 className="animate-spin" /> : <Mic2 />}
                       Continue with free account
                     </Button>
@@ -249,3 +260,24 @@ export function OnboardingForm() {
     </main>
   );
 }
+
+export function CheckboxComp({ checked, onCheckedChange, label }: {
+  label: string,
+  checked: boolean,
+  onCheckedChange: (check: boolean) => void
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-3">
+      <Checkbox
+        id="terms-checkbox"
+        name="terms-checkbox"
+        checked={checked}
+        onCheckedChange={(value) => onCheckedChange(value === true)}
+        className="border-zinc-600 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-black"
+      />
+      <Label htmlFor="terms-checkbox" className="whitespace-nowrap text-sm text-zinc-200">
+        {label}
+      </Label>
+    </div>
+  )
+};

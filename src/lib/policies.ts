@@ -1,13 +1,22 @@
-interface PoliciesType {
+interface PolicyDefinition {
+  type: string;
   title: string;
   message: string;
 }
 
-type PoliciesTypeSet = "ONBOARD";
+export type PolicyTypeSet = "ONBOARD" | "MONEY";
 
-export const policiesList: Record<PoliciesTypeSet, PoliciesType> = {
+export const policiesList: Record<PolicyTypeSet, PolicyDefinition> = {
   ONBOARD: {
+    type: "ONBOARD",
     title: "test",
     message: "test",
   },
-};
+  MONEY: {
+    type: "MONEY",
+    title: "test",
+    message: "test",
+  }
+} as const satisfies Record<string, PolicyDefinition>;
+
+export type PoliciesTypeSet = keyof typeof policiesList;

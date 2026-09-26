@@ -317,6 +317,7 @@ model GuardRailsMessage {
 model Policies {
   id       String  @id @default(uuid())
   userId   String
+  type     String  @unique
   isAgreed Boolean
   title    String
   message  String
