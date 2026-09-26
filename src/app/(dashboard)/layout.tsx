@@ -8,6 +8,7 @@ import {
 import { DashboardSidebar } from "@/features/dashboard/components/dashboard-sidebar";
 import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
+import { policiesList } from "@/lib/policies";
 
 export default async function DashboardLayout({
     children,
@@ -23,10 +24,24 @@ export default async function DashboardLayout({
 
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { isOnboarded: true },
+        select: {
+            isOnboarded: true,
+            policies: {
+                select: {
+                    type: true,
+                    isAgreed: true,
+                },
+            },
+        },
     });
 
-    if (!user?.isOnboarded) {
+    const hasAcceptedOnboardingPolicy = user?.policies.some(
+        (policy) =>
+            policy.type === policiesList.ONBOARD.type &&
+            policy.isAgreed,
+    );
+
+    if (!user?.isOnboarded || !hasAcceptedOnboardingPolicy) {
         redirect("/onboarding");
     }
     const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
