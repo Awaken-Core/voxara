@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AudioLines, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 import MoltenMetal from "@/components/auth/auth-background";
@@ -39,19 +39,40 @@ export function AuthShell({ children, headline }: AuthShellProps) {
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.2),rgba(0,0,0,.12)_55%,rgba(0,0,0,.82))]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,.08)_45%,rgba(0,0,0,.58)_100%)]" />
 
-        <div className="relative z-10 flex h-full min-h-dvh items-center justify-center px-12">
-          <div className="max-w-sm">
+        <div className="absolute left-10 top-9 z-10 flex items-center gap-2.5">
+          <div className="flex size-9 items-center justify-center rounded-md border border-white/15 bg-white/8 backdrop-blur-xl">
             <Image
               src="/logo.svg"
-              alt="Resonance"
-              width={32}
-              height={32}
-              className="rounded-sm py-6 mx-1 brightness-150"
+              alt="Voxara"
+              width={23}
+              height={23}
+              className="brightness-150"
             />
-            <h1 className="mx-auto max-w-xs text-3xl leading-[1.08] text-white">
+          </div>
+          <div>
+            <p className="text-[15px] font-medium tracking-[-0.02em]">Voxara</p>
+            <p className="text-xs text-white/45">AI voice studio</p>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex h-full min-h-dvh items-center justify-center px-12">
+          <div className="max-w-sm">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs text-white/65 backdrop-blur-xl">
+              <Sparkles className="size-3.5" />
+              Make every word sound alive
+            </div>
+            <h1 className="max-w-sm text-[2.3rem] leading-[1.02] text-white">
               {headline}
             </h1>
+            <p className="mt-5 max-w-xs text-sm leading-6 text-white/50">
+              Natural text to speech and custom voices, built for the way you create.
+            </p>
           </div>
+        </div>
+
+        <div className="absolute bottom-9 left-10 z-10 flex items-center gap-2 text-xs text-white/45">
+          <AudioLines className="size-4" />
+          <span>Natural voices · Fast generation · Your creative control</span>
         </div>
       </section>
 
