@@ -62,6 +62,7 @@ enum GuardRailType {
   USERPROMPT
   USERVOICE
 }
+
 model User {
   id            String    @id
   name          String
@@ -92,6 +93,7 @@ model User {
   creditLogs         CreditLog[]
   userPurchaseLogs   UserPurchaseLog[]
   guardRailsMessages GuardRailsMessage[]
+  policies           Policies[]
 
   @@unique([email])
   @@map("user")
@@ -304,9 +306,21 @@ model GuardRailsMessage {
   checkPass Boolean?
   user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction)
 
-  guardrailType GuardRailType  @default(USERPROMPT)
+  guardrailType GuardRailType @default(USERPROMPT)
 
   response Json?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+}
+
+model Policies {
+  id       String  @id @default(uuid())
+  userId   String
+  isAgreed Boolean
+  title    String
+  message  String
+  user     User   @relation(fields: [userId], references: [id], onDelete: NoAction)
 
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
